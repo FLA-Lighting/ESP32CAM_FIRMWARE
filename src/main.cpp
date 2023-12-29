@@ -103,7 +103,7 @@ void setup() {
   I2CSensors.begin(I2C_SDA, I2C_SCL, 100000);
   bool status = bme.begin(0x76, &I2CSensors); // Inicializa o sensor BME280
   if (!status) {
-    Serial.println("Não foi possível encontrar um sensor BME280 válido, verifique a conexão!");
+    Serial.println("Não foi possível encontrar um sensor BME280 válido, verifique a conexão.");
     while (1);
   }
 }
