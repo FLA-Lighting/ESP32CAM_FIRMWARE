@@ -5,30 +5,30 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
-// Definições de pinos para I2C
-#define I2C_SDA 14  // SDA conectado ao GPIO 14
-#define I2C_SCL 15  // SCL conectado ao GPIO 15
+// I2C Configuration
+#define I2C_SDA 14  // SDA connected to GPIO 14
+#define I2C_SCL 15  // SCL connected to GPIO 15
 TwoWire I2CSensors = TwoWire(0);
 
-// Objeto do sensor BME280
+// BME280 Sensor Object
 Adafruit_BME280 bme;  // I2C
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
-// Tamanho do buffer para o cliente MQTT
+// Buffer size for MQTT client
 const int bufferSize = 1024 * 23;  // 23552 bytes
 
-// Instâncias do cliente WiFi e MQTT
+// WiFi and MQTT client instances
 WiFiClient net;
 MQTTClient client = MQTTClient(bufferSize);
 
-// Função para conectar ao Wi-Fi
+// Function to connect to Wi-Fi
 void connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   Serial.println("\n\n=====================");
-  Serial.println("Conectando no Wi-Fi");
+  Serial.println("Connecting to Wi-Fi");
   Serial.println("=====================\n\n");
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -37,18 +37,17 @@ void connectWiFi() {
   }
 
   Serial.println("\n\n=====================");
-  Serial.println("Conectado ao Wi-Fi!");
+  Serial.println("Connected to Wi-Fi!");
   Serial.println("=====================\n\n");
 }
 
-// Função para conectar ao MQTT
+// Function to connect to MQTT
 void connectMQTT() {
-  // Inicializa o cliente MQTT
   client.begin(mqtt_broker, 1883, net);
   client.setCleanSession(true);
 
   Serial.println("\n\n=====================");
-  Serial.println("Conectando no MQTT BROKER");
+  Serial.println("Connecting to MQTT Broker");
   Serial.println("=====================\n\n");
 
   while (!client.connect(ID, mqtt_login, mqtt_password)) {
@@ -57,23 +56,23 @@ void connectMQTT() {
   }
 
   if (!client.connected()) {
-    Serial.println("Tempo esgotado ao conectar ao MQTT!");
+    Serial.println("Timed out while connecting to MQTT!");
     ESP.restart();
     return;
   }
 
   Serial.println("\n\n=====================");
-  Serial.println("Conectado ao MQTT!");
+  Serial.println("Connected to MQTT!");
   Serial.println("=====================\n\n");
 }
 
-// Função para capturar e publicar uma imagem
+// Function to capture and publish an image
 void grabImage() {
   camera_fb_t *fb = esp_camera_fb_get();
   if (fb != NULL && fb->format == PIXFORMAT_JPEG && fb->len < bufferSize) {
-    Serial.print("Comprimento da Imagem: ");
+    Serial.print("Image Length: ");
     Serial.print(fb->len);
-    Serial.print("\t Imagem Publicada: ");
+    Serial.print("\t Published Image: ");
     bool result = client.publish(ESP32CAM_PUBLISH_TOPIC, (const char *)fb->buf, fb->len);
     Serial.println(result);
 
@@ -85,36 +84,52 @@ void grabImage() {
   delay(1);
 }
 
-// Função para publicar dados do sensor BME280
+// Function to publish sensor data
 void publishSensorData() {
   char payload[100];
-  snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"pressao\": %.2f, \"altitude\": %.2f, \"umidade\": %.2f}",
+  snprintf(payload, sizeof(payload), "{\"temperature\": %.2f, \"pressure\": %.2f, \"altitude\": %.2f, \"humidity\": %.2f}",
            bme.readTemperature(), bme.readPressure() / 100.0F, bme.readAltitude(SEALEVELPRESSURE_HPA), bme.readHumidity());
 
   client.publish("esp32/bme280", payload);
 }
 
-// Função de configuração
+// Function to connect to WiFi, MQTT, and initialize sensors
 void setup() {
   Serial.begin(115200);
-  cameraInit(); // Inicializa a câmera
-  connectWiFi(); // Conecta ao Wi-Fi
-  connectMQTT(); //// Conecta ao MQTT BROKER
+  cameraInit(); // Initialize the camera
+  connectWiFi(); // Connect to Wi-Fi
+  connectMQTT(); // Connect to MQTT Broker
   I2CSensors.begin(I2C_SDA, I2C_SCL, 100000);
-  bool status = bme.begin(0x76, &I2CSensors); // Inicializa o sensor BME280
+  bool status = bme.begin(0x76, &I2CSensors); // Initialize BME280 sensor
+
   if (!status) {
-    Serial.println("Não foi possível encontrar um sensor BME280 válido, verifique a conexão.");
+    Serial.println("Unable to find a valid BME280 sensor, check the connection.");
     while (1);
   }
 }
 
-// Função principal de execução contínua
-void loop() {
-  client.loop(); // Lida com os eventos do cliente MQTT
+// Function to publish sensor data only once every minute
+unsigned long lastSensorDataTime = 0;  // Variable to track the last time sensor data was sent
+const unsigned long sensorDataInterval = 60000;  // Interval in milliseconds (1 minute)
 
-  // Se conectado ao MQTT, captura e publica a imagem e publica os dados do sensor
+void publishSensorDataWithInterval() {
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - lastSensorDataTime >= sensorDataInterval) {
+    publishSensorData();  // Publish sensor data
+    lastSensorDataTime = currentMillis;  // Update the last time sensor data was sent
+  }
+}
+
+// Main loop
+void loop() {
+  client.loop(); // Handle MQTT events
+
+  // If connected to MQTT, capture and publish the image
   if (client.connected()) {
     grabImage();
-    publishSensorData();
+
+    // Publish sensor data only once every minute
+    publishSensorDataWithInterval();
   }
 }
