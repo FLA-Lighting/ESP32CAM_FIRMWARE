@@ -1,6 +1,5 @@
 #include "esp_camera.h"
 #include <WiFiClientSecure.h>
-#include "WiFi.h"
 
 // Definições dos pinos da câmera
 #define PWDN_GPIO_NUM 32
@@ -21,8 +20,7 @@
 #define PCLK_GPIO_NUM 22
 
 // Função para inicializar a câmera
-void cameraInit() {
-  // Configuração da câmera
+void cameraInit(){
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -38,21 +36,21 @@ void cameraInit() {
   config.pin_pclk = PCLK_GPIO_NUM;
   config.pin_vsync = VSYNC_GPIO_NUM;
   config.pin_href = HREF_GPIO_NUM;
-  config.pin_sccb_sda = SIOD_GPIO_NUM;
-  config.pin_sccb_scl = SIOC_GPIO_NUM;
+  config.pin_sscb_sda = SIOD_GPIO_NUM;
+  config.pin_sscb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  config.frame_size = FRAMESIZE_VGA; 
+  config.frame_size = FRAMESIZE_VGA; // 640x480
   config.jpeg_quality = 10;
   config.fb_count = 2;
 
-  // Inicialização da câmera
+  // camera init
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
-    Serial.printf("Falha na inicialização da câmera com erro 0x%x", err);
-    ESP.restart();  // Reinicia o ESP32 em caso de falha na inicialização da câmera
+    Serial.printf("Camera init failed with error 0x%x", err);
+    ESP.restart();
     return;
   }
 }

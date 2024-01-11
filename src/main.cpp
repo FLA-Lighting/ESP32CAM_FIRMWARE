@@ -1,9 +1,20 @@
-#include "secrets.h"
 #include "camera_config.h"
 #include <MQTTClient.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <WiFiManager.h>
+
+// Definição de identificador único para o dispositivo ESP32CAM
+#define ID "ESP32CAM_0"
+
+// Tópico MQTT para publicação de imagens do ESP32CAM
+#define ESP32CAM_PUBLISH_TOPIC "esp32/cam_0"
+
+// Configurações do servidor MQTT
+const char mqtt_broker[] = "35.208.123.29"; // Endereço do servidor MQTT
+const char mqtt_login[] = "admin";        // Nome de usuário MQTT
+const char mqtt_password[] = "1221";      // Senha do usuário MQTT
 
 // I2C Configuration
 #define I2C_SDA 14  // SDA connected to GPIO 14
@@ -16,34 +27,16 @@ Adafruit_BME280 bme;  // I2C
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // Buffer size for MQTT client
-const int bufferSize = 1024 * 23;  // 23552 bytes
+const int bufferSize = 1024 * 9;  // 23552 bytes
 
 // WiFi and MQTT client instances
-WiFiClient net;
+WiFiManager wifiManager;
+WiFiClient wifiClient;
 MQTTClient client = MQTTClient(bufferSize);
-
-// Function to connect to Wi-Fi
-void connectWiFi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  Serial.println("\n\n=====================");
-  Serial.println("Connecting to Wi-Fi");
-  Serial.println("=====================\n\n");
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("\n\n=====================");
-  Serial.println("Connected to Wi-Fi!");
-  Serial.println("=====================\n\n");
-}
 
 // Function to connect to MQTT
 void connectMQTT() {
-  client.begin(mqtt_broker, 1883, net);
+  client.begin(mqtt_broker, 1883, wifiClient);
   client.setCleanSession(true);
 
   Serial.println("\n\n=====================");
@@ -96,8 +89,11 @@ void publishSensorData() {
 // Function to connect to WiFi, MQTT, and initialize sensors
 void setup() {
   Serial.begin(115200);
+  
+  // Run WiFiManager to configure WiFi
+  wifiManager.autoConnect("ESP32CAM");
+
   cameraInit(); // Initialize the camera
-  connectWiFi(); // Connect to Wi-Fi
   connectMQTT(); // Connect to MQTT Broker
   I2CSensors.begin(I2C_SDA, I2C_SCL, 100000);
   bool status = bme.begin(0x76, &I2CSensors); // Initialize BME280 sensor

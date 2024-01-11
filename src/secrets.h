@@ -6,9 +6,6 @@
 // Tópico MQTT para publicação de imagens do ESP32CAM
 #define ESP32CAM_PUBLISH_TOPIC "esp32/cam_0"
 
-// Configurações de rede Wi-Fi
-const char WIFI_SSID[] = "MATHEUS ";     // Nome da rede Wi-Fi
-const char WIFI_PASSWORD[] = "12213490"; // Senha da rede Wi-Fi
 
 // Configurações do servidor MQTT
 const char mqtt_broker[] = "35.208.123.29"; // Endereço do servidor MQTT

@@ -1,33 +1,96 @@
-# Módulo Mestre dos Postes Inteligentes
+# Módulo Mestre
 
-Este projeto representa o firmware do módulo mestre do sistema de postes inteligentes baseado em ESP32CAM. O módulo tem como princípio capturar imagens, enviá-las via MQTT e posteriormente passá-las por um processo de análise de inteligência artificial para detectar a presença de pessoas. Simultaneamente, o módulo captura dados do ambiente por meio do sensor BME280. Além disso, está em desenvolvimento a funcionalidade do módulo atenuador, que permitirá o controle da intensidade luminosa dos postes.
+Este projeto representa o firmware do módulo mestre do sistema de postes inteligentes. O módulo tem como princípio capturar imagens, enviá-las via MQTT e posteriormente passá-las por um processo de análise de inteligência artificial para detectar a presença de pessoas. Simultaneamente, o módulo captura dados do ambiente por meio do sensor BME280.
 
-## secrets.h (Arquivo de Configuração)
+Este é um código para um projeto usando um ESP32 com uma câmera (ESP32-CAM), um sensor de pressão, temperatura e umidade BME280, e comunicação MQTT para enviar dados da câmera e informações do sensor para um broker MQTT. Vamos passar pelo código passo a passo:
 
-```cpp
+1. **Inclusão de Bibliotecas:**
+   ```cpp
+   #include "secrets.h"
+   #include "camera_config.h"
+   #include <MQTTClient.h>
+   #include <Wire.h>
+   #include <Adafruit_Sensor.h>
+   #include <Adafruit_BME280.h>
+   ```
 
-// Arquivo: secrets.h
+   - `secrets.h`: Este arquivo contém informações sensíveis como as credenciais Wi-Fi (`WIFI_SSID` e `WIFI_PASSWORD`), o endereço do broker MQTT (`mqtt_broker`), login e senha MQTT (`mqtt_login` e `mqtt_password`).
+   - `camera_config.h`: Configurações relacionadas à câmera.
+   - `MQTTClient.h`: Biblioteca para implementar a funcionalidade MQTT.
+   - `Wire.h`: Biblioteca para comunicação I2C.
+   - `Adafruit_Sensor.h` e `Adafruit_BME280.h`: Bibliotecas para o sensor BME280.
 
-// Definição de identificador único para o dispositivo ESP32CAM
-#define ID "ESP32CAM_0"
+2. **Configuração de Pinos I2C:**
+   ```cpp
+   #define I2C_SDA 14  // SDA conectado ao GPIO 14
+   #define I2C_SCL 15  // SCL conectado ao GPIO 15
+   TwoWire I2CSensors = TwoWire(0);
+   ```
 
-// Tópico MQTT para publicação de imagens do ESP32CAM
-#define ESP32CAM_PUBLISH_TOPIC "esp32/cam_0"
+   - Define os pinos SDA e SCL para a comunicação I2C.
 
-// Configurações de rede Wi-Fi
-const char WIFI_SSID[] = "MATHEUS ";     // Nome da rede Wi-Fi
-const char WIFI_PASSWORD[] = "12213490"; // Senha da rede Wi-Fi
+3. **Objeto do Sensor BME280:**
+   ```cpp
+   Adafruit_BME280 bme;  // I2C
+   ```
 
-// Configurações do servidor MQTT
-const char mqtt_broker[] = "ec2-13-58-196-72.us-east-2.compute.amazonaws.com"; // Endereço do servidor MQTT
-const char mqtt_login[] = "admin";        // Nome de usuário MQTT
-const char mqtt_password[] = "1221";      // Senha do usuário MQTT
+   - Cria um objeto para o sensor BME280.
 
-```
-## camera_config.h (Configurações da Câmera)
+4. **Definição de Constantes:**
+   ```cpp
+   #define SEALEVELPRESSURE_HPA (1013.25)
+   const int bufferSize = 1024 * 23;  // 23552 bytes
+   ```
 
-Este arquivo contém as definições de pinos e a função cameraInit(), responsável pela inicialização da câmera.
+   - Define a pressão ao nível do mar para o cálculo da altitude.
+   - Define o tamanho do buffer para o cliente MQTT.
 
-## Código Principal (main.ino)
+5. **Instâncias de Cliente MQTT e Cliente Wi-Fi:**
+   ```cpp
+   WiFiClient net;
+   MQTTClient client = MQTTClient(bufferSize);
+   ```
 
-Este arquivo é a parte principal do código. Ele se conecta à rede Wi-Fi, ao servidor MQTT e, em seguida, entra em um loop em que captura imagens da câmera. As imagens são publicadas no servidor MQTT para posterior análise de IA, enquanto os dados do sensor BME280 são enviados para o tópico "esp32/bme280".
+   - Cria instâncias do cliente MQTT e do cliente Wi-Fi.
+
+6. **Função para Conectar ao Wi-Fi:**
+   ```cpp
+   void connectWiFi() { ... }
+   ```
+
+   - Conecta o dispositivo ao Wi-Fi.
+
+7. **Função para Conectar ao MQTT:**
+   ```cpp
+   void connectMQTT() { ... }
+   ```
+
+   - Conecta o dispositivo ao broker MQTT.
+
+8. **Função para Capturar e Publicar uma Imagem:**
+   ```cpp
+   void grabImage() { ... }
+   ```
+
+   - Captura uma imagem da câmera e a publica no tópico MQTT.
+
+9. **Função para Publicar Dados do Sensor:**
+   ```cpp
+   void publishSensorData() { ... }
+   ```
+
+   - Lê dados do sensor BME280 e os publica no tópico MQTT.
+
+10. **Configuração Inicial no `setup()`:**
+   ```cpp
+   void setup() { ... }
+   ```
+
+   - Inicializa a comunicação serial, a câmera, conecta ao Wi-Fi, ao MQTT e inicializa o sensor BME280.
+
+11. **Loop Principal no `loop()`:**
+   ```cpp
+   void loop() { ... }
+   ```
+
+   - Lida com eventos MQTT, captura e publica imagens, e publica dados do sensor com intervalo de um minuto.
