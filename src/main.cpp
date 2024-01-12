@@ -27,16 +27,16 @@ Adafruit_BME280 bme;  // I2C
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // Buffer size for MQTT client
-const int bufferSize = 1024 * 9;  // 23552 bytes
+const int bufferSize = 1024 * 12;  // 23552 bytes
 
 // WiFi and MQTT client instances
 WiFiManager wifiManager;
-WiFiClient wifiClient;
+WiFiClient net;
 MQTTClient client = MQTTClient(bufferSize);
 
 // Function to connect to MQTT
 void connectMQTT() {
-  client.begin(mqtt_broker, 1883, wifiClient);
+  client.begin(mqtt_broker, 1883, net);
   client.setCleanSession(true);
 
   Serial.println("\n\n=====================");

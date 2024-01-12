@@ -20,7 +20,8 @@
 #define PCLK_GPIO_NUM 22
 
 // Função para inicializar a câmera
-void cameraInit(){
+void cameraInit() {
+  // Configuração da câmera
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -42,15 +43,15 @@ void cameraInit(){
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  config.frame_size = FRAMESIZE_VGA; // 640x480
+  config.frame_size = FRAMESIZE_VGA; 
   config.jpeg_quality = 10;
   config.fb_count = 2;
 
-  // camera init
+  // Inicialização da câmera
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x", err);
-    ESP.restart();
+    Serial.printf("Falha na inicialização da câmera com erro 0x%x", err);
+    ESP.restart();  // Reinicia o ESP32 em caso de falha na inicialização da câmera
     return;
   }
 }
