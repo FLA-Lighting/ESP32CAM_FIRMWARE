@@ -12,7 +12,7 @@
 #define ESP32CAM_PUBLISH_TOPIC "esp32/cam_0"
 
 // Configurações do servidor MQTT
-const char mqtt_broker[] = "35.208.123.29"; // Endereço do servidor MQTT
+const char mqtt_broker[] = "34.176.121.200"; // Endereço do servidor MQTT
 const char mqtt_login[] = "admin";        // Nome de usuário MQTT
 const char mqtt_password[] = "1221";      // Senha do usuário MQTT
 
@@ -27,7 +27,7 @@ Adafruit_BME280 bme;  // I2C
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // Buffer size for MQTT client
-const int bufferSize = 1024 * 12;  // 23552 bytes
+const int bufferSize = 1024 * 13;  // 23552 bytes
 
 // WiFi and MQTT client instances
 WiFiManager wifiManager;
@@ -62,19 +62,14 @@ void connectMQTT() {
 // Function to capture and publish an image
 void grabImage() {
   camera_fb_t *fb = esp_camera_fb_get();
-  if (fb != NULL && fb->format == PIXFORMAT_JPEG && fb->len < bufferSize) {
-    Serial.print("Image Length: ");
-    Serial.print(fb->len);
-    Serial.print("\t Published Image: ");
+  if (fb != NULL && fb->len < bufferSize) {
     bool result = client.publish(ESP32CAM_PUBLISH_TOPIC, (const char *)fb->buf, fb->len);
-    Serial.println(result);
 
     if (!result) {
       ESP.restart();
     }
   }
   esp_camera_fb_return(fb);
-  delay(1);
 }
 
 // Function to publish sensor data
